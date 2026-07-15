@@ -1,0 +1,209 @@
+USE delidashDB;
+GO
+
+-- =====================
+-- Role
+-- =====================
+CREATE TABLE Role (
+    RoleID INT IDENTITY(1,1) PRIMARY KEY,
+    RoleName VARCHAR(50) NOT NULL
+);
+
+-- =====================
+-- Address
+-- =====================
+CREATE TABLE Address (
+    AddressID INT IDENTITY(1,1) PRIMARY KEY,
+    StreetAddress VARCHAR(100) NOT NULL,
+    City VARCHAR(50) NOT NULL,
+    State VARCHAR(20) NOT NULL,
+    Zip VARCHAR(10) NOT NULL
+);
+
+-- =====================
+-- Images
+-- =====================
+CREATE TABLE Images (
+    ImageID INT IDENTITY(1,1) PRIMARY KEY,
+    CloudURL VARCHAR(255),
+    AccessibilityText VARCHAR(250)
+);
+
+-- =====================
+-- Users
+-- =====================
+CREATE TABLE Users (
+    UserID INT IDENTITY(1,1) PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) NOT NULL UNIQUE,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Phone VARCHAR(20),
+    RoleID INT NOT NULL,
+    AddressID INT,
+    ProfilePic INT,
+
+    CONSTRAINT FK_Users_Role
+        FOREIGN KEY (RoleID)
+        REFERENCES Role(RoleID),
+
+    CONSTRAINT FK_Users_Address
+        FOREIGN KEY (AddressID)
+        REFERENCES Address(AddressID),
+
+    CONSTRAINT FK_Users_Image
+        FOREIGN KEY (ProfilePic)
+        REFERENCES Images(ImageID)
+);
+
+-- =====================
+-- Drivers
+-- =====================
+CREATE TABLE Drivers (
+    DriverID INT IDENTITY(1,1) PRIMARY KEY,
+    UserID INT NOT NULL,
+    VehicleType VARCHAR(50),
+    Rating DECIMAL(2,1),
+    Availability VARCHAR(20),
+
+    CONSTRAINT FK_Drivers_User
+        FOREIGN KEY (UserID)
+        REFERENCES Users(UserID)
+);
+
+-- =====================
+-- Available Shifts
+-- =====================
+CREATE TABLE AvailableShifts (
+    ShiftID INT IDENTITY(1,1) PRIMARY KEY,
+    ShiftStart DATETIME NOT NULL,
+    ShiftEnd DATETIME NOT NULL,
+    Bonus VARCHAR(20)
+);
+
+-- =====================
+-- Driver Shifts
+-- =====================
+CREATE TABLE DriverShifts (
+    ShiftID INT IDENTITY(1,1) PRIMARY KEY,
+    DriverID INT NOT NULL,
+    ShiftStart DATETIME NOT NULL,
+    ShiftEnd DATETIME NOT NULL,
+    Status VARCHAR(20),
+
+    CONSTRAINT FK_DriverShifts_Driver
+        FOREIGN KEY (DriverID)
+        REFERENCES Drivers(DriverID)
+);
+
+-- =====================
+-- Restaurants
+-- =====================
+CREATE TABLE Restaurants (
+    RestaurantID INT IDENTITY(1,1) PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    OwnerID INT NOT NULL,
+    AddressID INT NOT NULL,
+    Rating DECIMAL(2,1),
+
+    CONSTRAINT FK_Restaurants_Owner
+        FOREIGN KEY (OwnerID)
+        REFERENCES Users(UserID),
+
+    CONSTRAINT FK_Restaurants_Address
+        FOREIGN KEY (AddressID)
+        REFERENCES Address(AddressID)
+);
+
+-- =====================
+-- Menu
+-- =====================
+CREATE TABLE Menu (
+    MenuID INT IDENTITY(1,1) PRIMARY KEY,
+    RestaurantID INT NOT NULL,
+    Price DECIMAL(8,2) NOT NULL,
+    Description VARCHAR(500),
+    ImageID INT,
+
+    CONSTRAINT FK_Menu_Restaurant
+        FOREIGN KEY (RestaurantID)
+        REFERENCES Restaurants(RestaurantID),
+
+    CONSTRAINT FK_Menu_Image
+        FOREIGN KEY (ImageID)
+        REFERENCES Images(ImageID)
+);
+
+-- =====================
+-- Orders
+-- =====================
+CREATE TABLE Orders (
+    OrderID INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerID INT NOT NULL,
+    RestaurantID INT NOT NULL,
+    DriverID INT NULL,
+    OrderStatus VARCHAR(25),
+    OrderTotal DECIMAL(8,2),
+    OrderDate DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT FK_Orders_Customer
+        FOREIGN KEY (CustomerID)
+        REFERENCES Users(UserID),
+
+    CONSTRAINT FK_Orders_Restaurant
+        FOREIGN KEY (RestaurantID)
+        REFERENCES Restaurants(RestaurantID),
+
+    CONSTRAINT FK_Orders_Driver
+        FOREIGN KEY (DriverID)
+        REFERENCES Drivers(DriverID)
+);
+
+-- =====================
+-- Order Details
+-- =====================
+CREATE TABLE OrderDetails (
+    OrderDetailID INT IDENTITY(1,1) PRIMARY KEY,
+    OrderID INT NOT NULL,
+    MenuID INT NOT NULL,
+    Quantity INT NOT NULL,
+
+    CONSTRAINT FK_OrderDetails_Order
+        FOREIGN KEY (OrderID)
+        REFERENCES Orders(OrderID),
+
+    CONSTRAINT FK_OrderDetails_Menu
+        FOREIGN KEY (MenuID)
+        REFERENCES Menu(MenuID)
+);
+
+-- =====================
+-- Order Tracking
+-- =====================
+CREATE TABLE OrderTracking (
+    TrackingID INT IDENTITY(1,1) PRIMARY KEY,
+    OrderID INT NOT NULL,
+    CurrentStatus VARCHAR(25),
+    ETA INT,
+    LastUpdated DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT FK_OrderTracking_Order
+        FOREIGN KEY (OrderID)
+        REFERENCES Orders(OrderID)
+);
+
+-- =====================
+-- Transactions
+-- =====================
+CREATE TABLE Transactions (
+    TransactionID INT IDENTITY(1,1) PRIMARY KEY,
+    OrderID INT NOT NULL,
+    Amount DECIMAL(8,2) NOT NULL,
+    PaymentMethod VARCHAR(25),
+    PaymentStatus VARCHAR(25),
+
+    CONSTRAINT FK_Transactions_Order
+        FOREIGN KEY (OrderID)
+        REFERENCES Orders(OrderID)
+);
+GO
